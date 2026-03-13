@@ -9,6 +9,7 @@ import {
   Platform,
   Alert,
   Share,
+  Linking,
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import * as LocalAuthentication from "expo-local-authentication";
@@ -254,13 +255,24 @@ export default function SettingsModal() {
           <View style={styles.divider} />
           <TouchableOpacity
             style={styles.actionRow}
-            onPress={() => router.push("/privacy-policy")}
+            onPress={() => Linking.openURL("https://rapidpaceai.cc/glucotrack-privacy")}
           >
             <View style={[styles.actionIcon, { backgroundColor: Colors.primary + "22" }]}>
               <Ionicons name="document-text-outline" size={16} color={Colors.primary} />
             </View>
             <Text style={styles.actionText}>Privacy Policy</Text>
-            <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+            <Ionicons name="open-outline" size={16} color={Colors.textMuted} />
+          </TouchableOpacity>
+          <View style={styles.divider} />
+          <TouchableOpacity
+            style={styles.actionRow}
+            onPress={() => Linking.openURL("https://rapidpaceai.cc/glucotrack-support")}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: Colors.primary + "22" }]}>
+              <Ionicons name="help-circle-outline" size={16} color={Colors.primary} />
+            </View>
+            <Text style={styles.actionText}>Support</Text>
+            <Ionicons name="open-outline" size={16} color={Colors.textMuted} />
           </TouchableOpacity>
         </View>
 
