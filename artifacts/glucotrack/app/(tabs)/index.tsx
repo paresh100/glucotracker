@@ -373,10 +373,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   appName: {
-    fontSize: 24,
-    fontFamily: "Inter_700Bold",
-    color: Colors.text,
-    letterSpacing: -0.5,
+    fontSize: 18,
+    fontFamily: "Inter_600SemiBold",
+    color: Colors.textSecondary,
+    letterSpacing: -0.3,
   },
   dateText: {
     fontSize: 12,
