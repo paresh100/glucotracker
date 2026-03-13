@@ -1,0 +1,161 @@
+Last Updated: 13 March 2026
+
+1. Introduction
+
+GlucoTrack ("we," "our," or "the App") is a personal glucose tracking app designed to help users record blood glucose readings, medications, meals, and related preferences for personal record-keeping.
+
+We are committed to protecting your privacy and handling your data with care.
+
+This Privacy Policy explains what information GlucoTrack collects, how it is used, how it is stored, how it is protected, and what rights you may have regarding your data.
+
+2. Information We Collect
+
+GlucoTrack collects only the information that you choose to enter into the app, including:
+
+blood glucose readings, including values, units, timestamps, and optional context such as fasting or after meals
+
+medication records, including names, dosages, frequencies, and dose log timestamps
+
+meal logs, including descriptions, meal types, carbohydrate estimates, and timestamps
+
+app preferences, including unit preferences, threshold values, display settings, and reminder times
+
+GlucoTrack does not collect:
+
+your name, email address, or phone number through the app
+
+location data
+
+device identifiers for advertising or tracking
+
+behavioral analytics data
+
+data from other apps on your device
+
+3. How Your Data Is Stored
+
+Your data may be stored:
+
+locally on your device
+
+in your personal iCloud storage, where iCloud syncing or backup is enabled
+
+in exported files created by you when you use the app’s export feature
+
+App preferences and saved records may use security features provided by your device and operating system.
+
+If certain app features use network communication, that communication is protected using HTTPS/TLS encryption.
+
+4. How Your Data Is Used
+
+Your data is used only to provide the app’s main features, including:
+
+saving your readings, medications, meals, and settings
+
+showing your history and trends
+
+syncing or backing up data through iCloud, where enabled
+
+allowing you to export your data when you choose to do so
+
+protecting app access through supported device security features
+
+5. Data Sharing
+
+GlucoTrack does not sell, rent, or trade your data.
+
+We do not share your health data with advertising networks, data brokers, social media platforms, or other users.
+
+Your data may be processed through Apple services where needed to support iCloud storage, syncing, backup, or device-level security features.
+
+6. Third-Party Services
+
+GlucoTrack is not designed to use third-party advertising or tracking services.
+
+The app does not use cross-app tracking for advertising purposes.
+
+The app may rely on Apple-provided services and device features, including iCloud, local device storage, and supported biometric security options.
+
+If other third-party services are added later to support app functions, this Privacy Policy will be updated.
+
+7. Data Export and Deletion
+
+You can manage your data within the app.
+
+Where these features are available, you may:
+
+export your data from the app
+
+permanently delete your saved data from the app
+
+remove locally stored app data by uninstalling the app from your device
+
+Please note:
+
+exported files are controlled by you after export
+
+if your data has been synced to iCloud, copies may remain in iCloud until removed under your Apple account settings or backup system
+
+uninstalling the app may remove local app data from your device, but may not automatically remove data stored in iCloud or in exported files
+
+8. Data Security
+
+We take reasonable steps to protect your data from unauthorized access, loss, misuse, or disclosure.
+
+Security measures may include:
+
+device-based secure storage
+
+optional biometric app lock
+
+privacy protection when the app is moved to the background
+
+automatic app lock after a period of inactivity
+
+encrypted network communication where used
+
+No method of electronic storage or transmission is completely secure, but we work to protect the data handled by the app.
+
+9. Children’s Privacy
+
+GlucoTrack is not intended for children under the age of 13.
+
+We do not knowingly collect personal information from children under 13. If you believe a child has provided data through the app, please contact us.
+
+10. Changes to This Policy
+
+We may update this Privacy Policy from time to time.
+
+Any changes will be posted on this page, and the "Last Updated" date will be revised.
+
+11. Your Rights
+
+Depending on your location and the laws that apply to you, you may have rights relating to your data, which may include:
+
+the right to access your data
+
+the right to delete your data
+
+the right to export your data
+
+the right to contact us with privacy questions
+
+12. Contact Us
+
+If you have questions, concerns, or requests regarding this Privacy Policy or your data, please contact us at:
+
+Email: hellorapidpaceai@gmail.com
+
+Important fixes from your old version
+
+You should remove this claim:
+
+“Removing the app from your device will also remove all locally stored data.”
+
+That line is too risky now because iCloud is involved.
+
+You should also stop saying:
+
+“Your health data remains entirely under your control.”
+
+That sounds fine, but with iCloud involved, Apple systems are part of the storage flow. Better to be more exact.
