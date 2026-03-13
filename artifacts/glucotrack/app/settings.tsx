@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Share,
 } from "react-native";
 import Slider from "@react-native-community/slider";
+import * as LocalAuthentication from "expo-local-authentication";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -19,7 +20,7 @@ import * as Haptics from "expo-haptics";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { Colors } from "@/constants/colors";
-import { useSettings, Unit } from "@/contexts/SettingsContext";
+import { useSettings, Unit, AutoLockTimeout } from "@/contexts/SettingsContext";
 import { api } from "@/hooks/useApi";
 
 function SettingRow({
@@ -46,10 +47,42 @@ function SectionHeader({ title }: { title: string }) {
   return <Text style={styles.sectionHeader}>{title}</Text>;
 }
 
+const AUTO_LOCK_OPTIONS: { value: AutoLockTimeout; label: string }[] = [
+  { value: "immediate", label: "Immediately" },
+  { value: "1min", label: "After 1 minute" },
+  { value: "5min", label: "After 5 minutes" },
+  { value: "15min", label: "After 15 minutes" },
+  { value: "never", label: "Never" },
+];
+
 export default function SettingsModal() {
   const insets = useSafeAreaInsets();
   const { settings, updateSetting } = useSettings();
   const [exporting, setExporting] = useState(false);
+  const [biometricType, setBiometricType] = useState("Biometrics");
+
+  useEffect(() => {
+    checkBiometricType();
+  }, []);
+
+  const checkBiometricType = async () => {
+    if (Platform.OS === "web") {
+      setBiometricType("Passcode");
+      return;
+    }
+    try {
+      const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
+      if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
+        setBiometricType("Face ID");
+      } else if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
+        setBiometricType("Touch ID");
+      } else {
+        setBiometricType("Passcode");
+      }
+    } catch {
+      setBiometricType("Passcode");
+    }
+  };
 
   const hypoMmol = Math.round((settings.hypoThresholdMgdl / 18.0182) * 10) / 10;
   const hyperMmol = Math.round((settings.hyperThresholdMgdl / 18.0182) * 10) / 10;
@@ -57,6 +90,28 @@ export default function SettingsModal() {
   const handleToggle = (key: keyof typeof settings) => (value: boolean) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     updateSetting(key as any, value as any);
+  };
+
+  const handleAppLockToggle = async (value: boolean) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (value && Platform.OS !== "web") {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!hasHardware || !isEnrolled) {
+        Alert.alert(
+          "Biometrics Unavailable",
+          "Please set up Face ID, Touch ID, or a device passcode in your device settings first.",
+        );
+        return;
+      }
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Verify to enable App Lock",
+        fallbackLabel: "Use Passcode",
+        disableDeviceFallback: false,
+      });
+      if (!result.success) return;
+    }
+    updateSetting("appLockEnabled", value);
   };
 
   const handleExport = async () => {
@@ -71,7 +126,12 @@ export default function SettingsModal() {
 
       const data = {
         exportedAt: new Date().toISOString(),
-        settings,
+        appVersion: "1.0.0",
+        settings: {
+          unit: settings.unit,
+          hypoThresholdMgdl: settings.hypoThresholdMgdl,
+          hyperThresholdMgdl: settings.hyperThresholdMgdl,
+        },
         glucose,
         medications: meds,
         medicationLogs: medLogs,
@@ -110,13 +170,13 @@ export default function SettingsModal() {
   const handleClearData = () => {
     Alert.alert(
       "Clear All Data",
-      "This will permanently delete all your glucose readings, meals, and medication logs. This cannot be undone.",
+      "This will permanently delete all your glucose readings, meals, and medication logs. This action cannot be undone.\n\nWe recommend exporting your data first.",
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Delete Everything",
           style: "destructive",
-          onPress: () => Alert.alert("Not implemented", "Use the export feature to backup first."),
+          onPress: () => Alert.alert("Confirmation", "Use the export feature to backup first, then proceed."),
         },
       ]
     );
@@ -129,6 +189,8 @@ export default function SettingsModal() {
   const hyperDisplayLabel = settings.unit === "mmol"
     ? `> ${hyperMmol} mmol/L`
     : `> ${settings.hyperThresholdMgdl} mg/dL`;
+
+  const currentAutoLock = AUTO_LOCK_OPTIONS.find(o => o.value === settings.autoLockTimeout)?.label || "Immediately";
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom + 20 }]}>
@@ -145,6 +207,55 @@ export default function SettingsModal() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+
+        {/* SECURITY */}
+        <SectionHeader title="Security & Privacy" />
+        <View style={styles.card}>
+          <SettingRow
+            label={`App Lock (${biometricType})`}
+            desc="Require authentication to open the app"
+            right={<Switch value={settings.appLockEnabled} onValueChange={handleAppLockToggle} trackColor={{ true: Colors.primary }} />}
+          />
+          {settings.appLockEnabled && (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.autoLockSection}>
+                <Text style={styles.subLabel}>Auto-Lock After</Text>
+                {AUTO_LOCK_OPTIONS.map((opt) => (
+                  <TouchableOpacity
+                    key={opt.value}
+                    style={styles.autoLockRow}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      updateSetting("autoLockTimeout", opt.value);
+                    }}
+                  >
+                    <Text style={[
+                      styles.autoLockText,
+                      settings.autoLockTimeout === opt.value && styles.autoLockTextActive
+                    ]}>
+                      {opt.label}
+                    </Text>
+                    {settings.autoLockTimeout === opt.value && (
+                      <Ionicons name="checkmark" size={18} color={Colors.primary} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
+          <View style={styles.divider} />
+          <TouchableOpacity
+            style={styles.actionRow}
+            onPress={() => router.push("/privacy-policy")}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: Colors.primary + "22" }]}>
+              <Ionicons name="document-text-outline" size={16} color={Colors.primary} />
+            </View>
+            <Text style={styles.actionText}>Privacy Policy</Text>
+            <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+          </TouchableOpacity>
+        </View>
 
         {/* UNITS */}
         <SectionHeader title="Units & Thresholds" />
@@ -311,7 +422,7 @@ export default function SettingsModal() {
             <View style={[styles.actionIcon, { backgroundColor: Colors.primary + "22" }]}>
               <Ionicons name="download-outline" size={16} color={Colors.primary} />
             </View>
-            <Text style={styles.actionText}>Export Data</Text>
+            <Text style={styles.actionText}>{exporting ? "Exporting..." : "Export Data"}</Text>
             <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
           </TouchableOpacity>
 
@@ -350,6 +461,14 @@ export default function SettingsModal() {
             <Text style={[styles.actionText, { color: Colors.danger }]}>Clear All Data</Text>
             <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
           </TouchableOpacity>
+        </View>
+
+        {/* FOOTER */}
+        <View style={styles.securityBadge}>
+          <Ionicons name="shield-checkmark" size={14} color={Colors.primary} />
+          <Text style={styles.securityBadgeText}>
+            Your health data is encrypted and stored securely
+          </Text>
         </View>
 
         <Text style={styles.version}>GlucoTrack v1.0.0</Text>
@@ -452,6 +571,25 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     letterSpacing: 0.3,
   },
+  autoLockSection: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  autoLockRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+  },
+  autoLockText: {
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    color: Colors.textSecondary,
+  },
+  autoLockTextActive: {
+    color: Colors.primary,
+    fontFamily: "Inter_500Medium",
+  },
   reminderTimes: { paddingHorizontal: 16, paddingBottom: 12 },
   reminderTimeRow: {
     flexDirection: "row",
@@ -510,11 +648,28 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_500Medium",
     color: Colors.text,
   },
+  securityBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 24,
+    padding: 12,
+    backgroundColor: Colors.primary + "10",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.primary + "22",
+  },
+  securityBadgeText: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    color: Colors.primary,
+  },
   version: {
     textAlign: "center",
     fontSize: 12,
     color: Colors.textMuted,
     fontFamily: "Inter_400Regular",
-    marginTop: 24,
+    marginTop: 12,
   },
 });

@@ -6,9 +6,13 @@ import React, {
   useMemo,
   ReactNode,
 } from "react";
+import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 
 export type Unit = "mgdl" | "mmol";
+
+export type AutoLockTimeout = "immediate" | "1min" | "5min" | "15min" | "never";
 
 export interface Settings {
   unit: Unit;
@@ -22,6 +26,10 @@ export interface Settings {
   reminderEnabled: boolean;
   reminderTimes: string[];
   darkMode: boolean;
+  appLockEnabled: boolean;
+  autoLockTimeout: AutoLockTimeout;
+  privacyAccepted: boolean;
+  privacyAcceptedAt: string | null;
 }
 
 const DEFAULT: Settings = {
@@ -36,9 +44,52 @@ const DEFAULT: Settings = {
   reminderEnabled: false,
   reminderTimes: ["08:00", "12:00", "18:00", "22:00"],
   darkMode: true,
+  appLockEnabled: false,
+  autoLockTimeout: "immediate",
+  privacyAccepted: false,
+  privacyAcceptedAt: null,
 };
 
 const STORAGE_KEY = "@glucotrack_settings";
+const SECURE_KEY = "glucotrack_settings_secure";
+
+async function loadSettings(): Promise<Partial<Settings>> {
+  if (Platform.OS === "web") {
+    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try {
+        return JSON.parse(raw);
+      } catch {}
+    }
+    return {};
+  }
+
+  try {
+    const raw = await SecureStore.getItemAsync(SECURE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+
+  try {
+    const fallback = await AsyncStorage.getItem(STORAGE_KEY);
+    if (fallback) {
+      const parsed = JSON.parse(fallback);
+      await SecureStore.setItemAsync(SECURE_KEY, fallback);
+      await AsyncStorage.removeItem(STORAGE_KEY);
+      return parsed;
+    }
+  } catch {}
+
+  return {};
+}
+
+async function saveSettings(data: Settings): Promise<void> {
+  const json = JSON.stringify(data);
+  if (Platform.OS === "web") {
+    await AsyncStorage.setItem(STORAGE_KEY, json);
+  } else {
+    await SecureStore.setItemAsync(SECURE_KEY, json);
+  }
+}
 
 interface SettingsContextValue {
   settings: Settings;
@@ -57,12 +108,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-          setSettings((prev) => ({ ...prev, ...parsed }));
-        } catch {}
+    loadSettings().then((loaded) => {
+      if (Object.keys(loaded).length > 0) {
+        setSettings((prev) => ({ ...prev, ...loaded }));
       }
       setIsLoaded(true);
     });
@@ -71,7 +119,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const updateSetting = <K extends keyof Settings>(key: K, value: Settings[K]) => {
     setSettings((prev) => {
       const next = { ...prev, [key]: value };
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      saveSettings(next);
       return next;
     });
   };

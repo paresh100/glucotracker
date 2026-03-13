@@ -47,6 +47,16 @@ A diabetes tracking mobile app with:
 - Estimated HbA1c from average glucose
 - Time-in-range statistics
 - Dark theme with teal/emerald accent colors
+- Statistics screen with 7/30/90-day ring charts and TIR breakdown
+
+### Security & Privacy
+- **Privacy Consent Modal**: First-launch modal explaining data collection/protection, with "I Agree & Continue" button
+- **Biometric App Lock**: Face ID / Touch ID / Fingerprint authentication via `expo-local-authentication`, with configurable auto-lock timeout (immediate/1min/5min/15min/never)
+- **Privacy Overlay**: Blur screen when app enters background/app-switcher to hide sensitive health data
+- **Secure Storage**: Settings stored in iOS Keychain / Android Keystore via `expo-secure-store` (AsyncStorage fallback on web)
+- **Privacy Policy**: Full in-app privacy policy screen accessible from Settings and consent modal
+- **iOS Privacy Manifest**: NSPrivacyTracking=false, health data declaration, NSUserDefaults API usage (CA92.1)
+- **App Store Config**: iOS bundleIdentifier `com.glucotrack.app`, Android package `com.glucotrack.app`, biometric permissions, Face ID usage description
 
 ### App Screens
 - `(tabs)/index.tsx` - Dashboard with latest reading, alerts, stats
@@ -57,6 +67,8 @@ A diabetes tracking mobile app with:
 - `log-meal.tsx` - Modal: log a meal
 - `log-medication.tsx` - Modal: log a medication dose
 - `manage-medications.tsx` - Modal: add/delete medications
+- `settings.tsx` - Modal: settings (units, thresholds, security, reminders, export)
+- `privacy-policy.tsx` - Modal: full in-app privacy policy
 
 ### DB Schema
 - `glucose_readings` - Blood glucose readings

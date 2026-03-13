@@ -58,7 +58,9 @@
   "dependencies": {
     "@react-native-community/slider": "^5.0.1",
     "expo-file-system": "^19.0.21",
+    "expo-local-authentication": "^55.0.8",
     "expo-notifications": "^0.32.16",
+    "expo-secure-store": "^55.0.8",
     "expo-sharing": "^14.0.8"
   }
 }
