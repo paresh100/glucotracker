@@ -69,7 +69,7 @@ export type GlucoseStats = {
   hba1cEstimate: number | null;
 };
 
-export type Period = "day" | "week" | "month" | "year";
+export type Period = "day" | "week" | "month" | "quarter" | "year";
 
 export const api = {
   // Glucose

@@ -18,9 +18,10 @@ import * as Haptics from "expo-haptics";
 import { Colors } from "@/constants/colors";
 import { api } from "@/hooks/useApi";
 import { getGlucoseLevel } from "@/utils/glucose";
+import { useSettings } from "@/contexts/SettingsContext";
 
 type Context = "fasting" | "before_meal" | "after_meal" | "bedtime" | "random";
-type Unit = "mgdl" | "mmol";
+type UnitType = "mgdl" | "mmol";
 
 const CONTEXTS: { key: Context; label: string; icon: string }[] = [
   { key: "fasting", label: "Fasting", icon: "moon" },
@@ -33,8 +34,9 @@ const CONTEXTS: { key: Context; label: string; icon: string }[] = [
 export default function LogGlucoseModal() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
+  const { settings } = useSettings();
   const [value, setValue] = useState("");
-  const [unit, setUnit] = useState<Unit>("mgdl");
+  const [unit, setUnit] = useState<UnitType>(settings.unit);
   const [context, setContext] = useState<Context>("random");
   const [notes, setNotes] = useState("");
 
