@@ -1,0 +1,10 @@
+{
+  "_comment": "Placeholder. Replace with your actual google-services.json from Firebase Console before building for Android.",
+  "project_info": {
+    "project_number": "",
+    "project_id": "",
+    "storage_bucket": ""
+  },
+  "client": [],
+  "configuration_version": "1"
+}

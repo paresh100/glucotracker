@@ -8,11 +8,11 @@ import {
   Switch,
   Platform,
   Alert,
-  TextInput,
   Share,
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import * as LocalAuthentication from "expo-local-authentication";
+import * as Crypto from "expo-crypto";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -22,6 +22,27 @@ import * as Sharing from "expo-sharing";
 import { Colors } from "@/constants/colors";
 import { useSettings, Unit, AutoLockTimeout } from "@/contexts/SettingsContext";
 import { api } from "@/hooks/useApi";
+
+function xorEncrypt(data: string, key: string): string {
+  const keyBytes = [];
+  for (let i = 0; i < key.length; i++) {
+    keyBytes.push(key.charCodeAt(i));
+  }
+  const result = [];
+  for (let i = 0; i < data.length; i++) {
+    result.push(data.charCodeAt(i) ^ keyBytes[i % keyBytes.length]);
+  }
+  return btoa(String.fromCharCode(...result));
+}
+
+async function deriveKey(password: string, salt: string): Promise<string> {
+  const material = password + salt;
+  const hash = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    material
+  );
+  return hash;
+}
 
 function SettingRow({
   label,
@@ -87,9 +108,9 @@ export default function SettingsModal() {
   const hypoMmol = Math.round((settings.hypoThresholdMgdl / 18.0182) * 10) / 10;
   const hyperMmol = Math.round((settings.hyperThresholdMgdl / 18.0182) * 10) / 10;
 
-  const handleToggle = (key: keyof typeof settings) => (value: boolean) => {
+  const handleBoolToggle = (key: 'showBolus' | 'showBasal' | 'showMedications' | 'fingerTracker' | 'backupEnabled' | 'reminderEnabled' | 'darkMode') => (value: boolean) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    updateSetting(key as any, value as any);
+    updateSetting(key, value);
   };
 
   const handleAppLockToggle = async (value: boolean) => {
@@ -114,7 +135,28 @@ export default function SettingsModal() {
     updateSetting("appLockEnabled", value);
   };
 
-  const handleExport = async () => {
+  const handleExport = () => {
+    Alert.prompt(
+      "Encrypt Export",
+      "Enter a password to encrypt your health data backup. You will need this password to restore.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Export",
+          onPress: async (password?: string) => {
+            if (!password || password.length < 4) {
+              Alert.alert("Password Required", "Please enter a password of at least 4 characters to encrypt your export.");
+              return;
+            }
+            await performExport(password);
+          },
+        },
+      ],
+      "secure-text",
+    );
+  };
+
+  const performExport = async (password: string) => {
     setExporting(true);
     try {
       const [glucose, meds, meals, medLogs] = await Promise.all([
@@ -138,19 +180,32 @@ export default function SettingsModal() {
         meals,
       };
 
-      const json = JSON.stringify(data, null, 2);
-      const path = `${FileSystem.documentDirectory}glucotrack-backup-${Date.now()}.json`;
-      await FileSystem.writeAsStringAsync(path, json, { encoding: FileSystem.EncodingType.UTF8 });
+      const json = JSON.stringify(data);
+      const salt = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        Date.now().toString() + Math.random().toString()
+      );
+      const key = await deriveKey(password, salt);
+      const encrypted = xorEncrypt(json, key);
+
+      const exportPayload = JSON.stringify({
+        version: 1,
+        format: "glucotrack-encrypted",
+        salt,
+        data: encrypted,
+      });
+
+      const path = `${FileSystem.documentDirectory}glucotrack-backup-${Date.now()}.gtbak`;
+      await FileSystem.writeAsStringAsync(path, exportPayload, { encoding: FileSystem.EncodingType.UTF8 });
 
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
         await Sharing.shareAsync(path, {
-          mimeType: "application/json",
-          dialogTitle: "Share GlucoTrack Backup",
-          UTI: "public.json",
+          mimeType: "application/octet-stream",
+          dialogTitle: "Share Encrypted GlucoTrack Backup",
         });
       } else {
-        Alert.alert("Export Complete", `Data saved to:\n${path}`);
+        Alert.alert("Export Complete", "Your encrypted backup has been saved.");
       }
     } catch (err) {
       Alert.alert("Export Failed", "Could not export your data. Please try again.");
@@ -330,17 +385,17 @@ export default function SettingsModal() {
         <View style={styles.card}>
           <SettingRow
             label="Show Bolus Insulin"
-            right={<Switch value={settings.showBolus} onValueChange={handleToggle("showBolus")} trackColor={{ true: Colors.primary }} />}
+            right={<Switch value={settings.showBolus} onValueChange={handleBoolToggle("showBolus")} trackColor={{ true: Colors.primary }} />}
           />
           <View style={styles.divider} />
           <SettingRow
             label="Show Basal Insulin"
-            right={<Switch value={settings.showBasal} onValueChange={handleToggle("showBasal")} trackColor={{ true: Colors.primary }} />}
+            right={<Switch value={settings.showBasal} onValueChange={handleBoolToggle("showBasal")} trackColor={{ true: Colors.primary }} />}
           />
           <View style={styles.divider} />
           <SettingRow
             label="Show Medications"
-            right={<Switch value={settings.showMedications} onValueChange={handleToggle("showMedications")} trackColor={{ true: Colors.primary }} />}
+            right={<Switch value={settings.showMedications} onValueChange={handleBoolToggle("showMedications")} trackColor={{ true: Colors.primary }} />}
           />
         </View>
 
@@ -350,7 +405,7 @@ export default function SettingsModal() {
           <SettingRow
             label="Finger Tracker"
             desc="Count daily finger-stick checks"
-            right={<Switch value={settings.fingerTracker} onValueChange={handleToggle("fingerTracker")} trackColor={{ true: Colors.primary }} />}
+            right={<Switch value={settings.fingerTracker} onValueChange={handleBoolToggle("fingerTracker")} trackColor={{ true: Colors.primary }} />}
           />
         </View>
 
@@ -360,7 +415,7 @@ export default function SettingsModal() {
           <SettingRow
             label="Glucose Reminders"
             desc="Get reminded to check your glucose"
-            right={<Switch value={settings.reminderEnabled} onValueChange={handleToggle("reminderEnabled")} trackColor={{ true: Colors.primary }} />}
+            right={<Switch value={settings.reminderEnabled} onValueChange={handleBoolToggle("reminderEnabled")} trackColor={{ true: Colors.primary }} />}
           />
           {settings.reminderEnabled && (
             <>
@@ -406,7 +461,7 @@ export default function SettingsModal() {
           <SettingRow
             label="Backup / Sync to iCloud"
             desc="Sync data across all your Apple devices"
-            right={<Switch value={settings.backupEnabled} onValueChange={handleToggle("backupEnabled")} trackColor={{ true: Colors.primary }} />}
+            right={<Switch value={settings.backupEnabled} onValueChange={handleBoolToggle("backupEnabled")} trackColor={{ true: Colors.primary }} />}
           />
           {settings.backupEnabled && (
             <View style={styles.backupNote}>
