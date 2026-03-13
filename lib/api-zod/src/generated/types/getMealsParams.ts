@@ -5,7 +5,8 @@
  * GlucoTrack API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { GetMealsPeriod } from "./getMealsPeriod";
 
-export interface HealthStatus {
-  status: string;
-}
+export type GetMealsParams = {
+  period?: GetMealsPeriod;
+};

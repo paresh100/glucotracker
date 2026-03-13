@@ -1,15 +1,20 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: GlucoTrack API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: glucose
+    description: Blood glucose readings
+  - name: medications
+    description: Medication tracking
+  - name: meals
+    description: Meal tracking
 paths:
   /healthz:
     get:
@@ -24,6 +29,221 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /glucose:
+    get:
+      operationId: getGlucoseReadings
+      tags: [glucose]
+      summary: Get all glucose readings
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [day, week, month, year]
+      responses:
+        "200":
+          description: List of glucose readings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GlucoseReading"
+    post:
+      operationId: createGlucoseReading
+      tags: [glucose]
+      summary: Log a blood glucose reading
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGlucoseReading"
+      responses:
+        "201":
+          description: Created glucose reading
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlucoseReading"
+
+  /glucose/{id}:
+    delete:
+      operationId: deleteGlucoseReading
+      tags: [glucose]
+      summary: Delete a glucose reading
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /medications:
+    get:
+      operationId: getMedications
+      tags: [medications]
+      summary: Get all medications
+      responses:
+        "200":
+          description: List of medications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Medication"
+    post:
+      operationId: createMedication
+      tags: [medications]
+      summary: Add a medication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMedication"
+      responses:
+        "201":
+          description: Created medication
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Medication"
+
+  /medications/{id}:
+    delete:
+      operationId: deleteMedication
+      tags: [medications]
+      summary: Delete a medication
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /medication-logs:
+    get:
+      operationId: getMedicationLogs
+      tags: [medications]
+      summary: Get medication dose logs
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [day, week, month, year]
+      responses:
+        "200":
+          description: List of medication logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MedicationLog"
+    post:
+      operationId: logMedicationDose
+      tags: [medications]
+      summary: Log a medication dose taken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMedicationLog"
+      responses:
+        "201":
+          description: Created medication log
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MedicationLog"
+
+  /meals:
+    get:
+      operationId: getMeals
+      tags: [meals]
+      summary: Get all meals
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [day, week, month, year]
+      responses:
+        "200":
+          description: List of meals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Meal"
+    post:
+      operationId: createMeal
+      tags: [meals]
+      summary: Log a meal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMeal"
+      responses:
+        "201":
+          description: Created meal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Meal"
+
+  /meals/{id}:
+    delete:
+      operationId: deleteMeal
+      tags: [meals]
+      summary: Delete a meal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /stats:
+    get:
+      operationId: getStats
+      tags: [glucose]
+      summary: Get glucose statistics
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [day, week, month, year]
+      responses:
+        "200":
+          description: Glucose statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlucoseStats"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +254,225 @@ components:
       required:
         - status
 
+    GlucoseReading:
+      type: object
+      properties:
+        id:
+          type: integer
+        value:
+          type: number
+          description: Blood glucose level in mg/dL
+        unit:
+          type: string
+          enum: [mgdl, mmol]
+        context:
+          type: string
+          enum: [fasting, before_meal, after_meal, bedtime, random]
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        recordedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - value
+        - unit
+        - recordedAt
+        - createdAt
+
+    CreateGlucoseReading:
+      type: object
+      properties:
+        value:
+          type: number
+        unit:
+          type: string
+          enum: [mgdl, mmol]
+        context:
+          type: string
+          enum: [fasting, before_meal, after_meal, bedtime, random]
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        recordedAt:
+          type: string
+          format: date-time
+      required:
+        - value
+        - unit
+        - recordedAt
+
+    Medication:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        dosage:
+          type: string
+          nullable: true
+        frequency:
+          type: string
+          nullable: true
+        color:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - createdAt
+
+    CreateMedication:
+      type: object
+      properties:
+        name:
+          type: string
+        dosage:
+          type: string
+          nullable: true
+        frequency:
+          type: string
+          nullable: true
+        color:
+          type: string
+          nullable: true
+      required:
+        - name
+
+    MedicationLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        medicationId:
+          type: integer
+        medicationName:
+          type: string
+        dosage:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        takenAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - medicationId
+        - medicationName
+        - takenAt
+        - createdAt
+
+    CreateMedicationLog:
+      type: object
+      properties:
+        medicationId:
+          type: integer
+        notes:
+          type: string
+          nullable: true
+        takenAt:
+          type: string
+          format: date-time
+      required:
+        - medicationId
+        - takenAt
+
+    Meal:
+      type: object
+      properties:
+        id:
+          type: integer
+        description:
+          type: string
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack, other]
+          nullable: true
+        carbsGrams:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        eatenAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - description
+        - eatenAt
+        - createdAt
+
+    CreateMeal:
+      type: object
+      properties:
+        description:
+          type: string
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack, other]
+          nullable: true
+        carbsGrams:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        eatenAt:
+          type: string
+          format: date-time
+      required:
+        - description
+        - eatenAt
+
+    GlucoseStats:
+      type: object
+      properties:
+        average:
+          type: number
+          nullable: true
+        min:
+          type: number
+          nullable: true
+        max:
+          type: number
+          nullable: true
+        lowCount:
+          type: integer
+        highCount: 
+          type: integer
+        inRangeCount:
+          type: integer
+        totalReadings:
+          type: integer
+        timeInRange:
+          type: number
+          description: Percentage of readings in target range
+        hba1cEstimate:
+          type: number
+          nullable: true
+          description: Estimated HbA1c percentage
+      required:
+        - lowCount
+        - highCount
+        - inRangeCount
+        - totalReadings
+        - timeInRange

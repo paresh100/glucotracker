@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "GlucoTrack"
+version = "1.0.0"
+id = "artifacts/glucotrack"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+localPort = 18943
+name = "expo"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/glucotrack run dev"
+
+[services.env]
+PORT = "18943"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/glucotrack", "run", "build"]
+run = ["pnpm", "--filter", "@workspace/glucotrack", "run", "serve"]
