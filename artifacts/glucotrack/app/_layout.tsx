@@ -35,7 +35,6 @@ function getTimeoutMs(timeout: string): number {
     case "1min": return 60_000;
     case "5min": return 300_000;
     case "15min": return 900_000;
-    case "never": return Infinity;
     default: return 0;
   }
 }

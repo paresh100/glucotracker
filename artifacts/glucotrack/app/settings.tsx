@@ -53,7 +53,6 @@ const AUTO_LOCK_OPTIONS: { value: AutoLockTimeout; label: string }[] = [
   { value: "1min", label: "After 1 minute" },
   { value: "5min", label: "After 5 minutes" },
   { value: "15min", label: "After 15 minutes" },
-  { value: "never", label: "Never" },
 ];
 
 export default function SettingsModal() {

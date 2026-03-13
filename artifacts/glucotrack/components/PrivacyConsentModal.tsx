@@ -8,19 +8,22 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "@/constants/colors";
+
+type IoniconsName = ComponentProps<typeof Ionicons>["name"];
 
 interface Props {
   onAccept: () => void;
   onViewPolicy: () => void;
 }
 
-function DataItem({ icon, title, desc }: { icon: string; title: string; desc: string }) {
+function DataItem({ icon, title, desc }: { icon: IoniconsName; title: string; desc: string }) {
   return (
     <View style={styles.dataItem}>
       <View style={styles.dataIcon}>
-        <Ionicons name={icon as any} size={18} color={Colors.primary} />
+        <Ionicons name={icon} size={18} color={Colors.primary} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.dataTitle}>{title}</Text>
@@ -30,10 +33,10 @@ function DataItem({ icon, title, desc }: { icon: string; title: string; desc: st
   );
 }
 
-function ProtectionItem({ icon, text }: { icon: string; text: string }) {
+function ProtectionItem({ icon, text }: { icon: IoniconsName; text: string }) {
   return (
     <View style={styles.protectionItem}>
-      <Ionicons name={icon as any} size={16} color={Colors.success} />
+      <Ionicons name={icon} size={16} color={Colors.success} />
       <Text style={styles.protectionText}>{text}</Text>
     </View>
   );

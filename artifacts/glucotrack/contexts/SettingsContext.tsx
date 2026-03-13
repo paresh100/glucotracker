@@ -12,7 +12,7 @@ import * as SecureStore from "expo-secure-store";
 
 export type Unit = "mgdl" | "mmol";
 
-export type AutoLockTimeout = "immediate" | "1min" | "5min" | "15min" | "never";
+export type AutoLockTimeout = "immediate" | "1min" | "5min" | "15min";
 
 export interface Settings {
   unit: Unit;

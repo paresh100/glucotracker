@@ -8,7 +8,10 @@ import {
 } from "react-native";
 import * as LocalAuthentication from "expo-local-authentication";
 import { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
 import { Colors } from "@/constants/colors";
+
+type IoniconsName = ComponentProps<typeof Ionicons>["name"];
 
 interface Props {
   onUnlock: () => void;
@@ -75,7 +78,7 @@ export function LockScreen({ onUnlock }: Props) {
     }
   };
 
-  const iconName =
+  const iconName: IoniconsName =
     biometricType === "Face ID" ? "scan" :
     biometricType === "Touch ID" ? "finger-print" :
     "lock-closed";
@@ -84,7 +87,7 @@ export function LockScreen({ onUnlock }: Props) {
     <View style={styles.container}>
       <View style={styles.iconContainer}>
         <View style={styles.iconCircle}>
-          <Ionicons name={iconName as any} size={48} color={Colors.primary} />
+          <Ionicons name={iconName} size={48} color={Colors.primary} />
         </View>
       </View>
 
@@ -100,7 +103,7 @@ export function LockScreen({ onUnlock }: Props) {
       )}
 
       <TouchableOpacity onPress={authenticate} style={styles.unlockBtn}>
-        <Ionicons name={iconName as any} size={20} color="#fff" />
+        <Ionicons name={iconName} size={20} color="#fff" />
         <Text style={styles.unlockText}>Unlock with {biometricType}</Text>
       </TouchableOpacity>
 
