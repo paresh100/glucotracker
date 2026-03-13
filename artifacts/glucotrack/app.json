@@ -18,8 +18,6 @@
       "bundleIdentifier": "com.glucotrack.app",
       "infoPlist": {
         "NSFaceIDUsageDescription": "GlucoTrack uses Face ID to protect your health data and prevent unauthorized access to your glucose readings, medications, and meal logs.",
-        "NSHealthShareUsageDescription": "GlucoTrack can read your health data to display glucose readings alongside your manually logged entries.",
-        "NSHealthUpdateUsageDescription": "GlucoTrack can save your glucose readings and health data to Apple Health for a unified health overview.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "privacyManifests": {
