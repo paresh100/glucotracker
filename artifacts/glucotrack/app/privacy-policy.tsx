@@ -36,7 +36,6 @@ function BulletPoint({ text }: { text: string }) {
 
 export default function PrivacyPolicyScreen({ onBack }: { onBack?: () => void }) {
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === "web" ? 20 : insets.top;
 
   const handleBack = () => {
     if (onBack) {
@@ -65,90 +64,100 @@ export default function PrivacyPolicyScreen({ onBack }: { onBack?: () => void })
       >
         <View style={styles.lastUpdated}>
           <Ionicons name="time-outline" size={14} color={Colors.textMuted} />
-          <Text style={styles.lastUpdatedText}>Last updated: March 2026</Text>
+          <Text style={styles.lastUpdatedText}>Last Updated: 13 March 2026</Text>
         </View>
 
         <Section title="1. Introduction">
-          <Paragraph text={'GlucoTrack ("we", "our", or "the App") is a personal diabetes management application designed to help you track blood glucose levels, medications, and meals. We are committed to protecting your privacy and handling your personal health information with the highest level of care and security.'} />
-          <Paragraph text="This Privacy Policy explains what information we collect, how we use it, how we protect it, and your rights regarding your data." />
+          <Paragraph text={'GlucoTrack ("we," "our," or "the App") is a personal glucose tracking app designed to help users record blood glucose readings, medications, meals, and related preferences for personal record-keeping.'} />
+          <Paragraph text="We are committed to protecting your privacy and handling your data with care." />
+          <Paragraph text="This Privacy Policy explains what information GlucoTrack collects, how it is used, how it is stored, how it is protected, and what rights you may have regarding your data." />
         </Section>
 
         <Section title="2. Information We Collect">
-          <Paragraph text="GlucoTrack collects only the data you voluntarily provide:" />
-          <BulletPoint text="Blood glucose readings (values, units, timestamps, context such as fasting or after meal)" />
-          <BulletPoint text="Medication records (names, dosages, frequencies, and dose log timestamps)" />
-          <BulletPoint text="Meal logs (descriptions, meal types, carbohydrate estimates, timestamps)" />
-          <BulletPoint text="App preferences (unit preference, threshold values, display settings, reminder times)" />
-          <Paragraph text="We do NOT collect:" />
-          <BulletPoint text="Personal identification information (name, email, phone number)" />
+          <Paragraph text="GlucoTrack collects only the information that you choose to enter into the app, including:" />
+          <BulletPoint text="Blood glucose readings, including values, units, timestamps, and optional context such as fasting or after meals" />
+          <BulletPoint text="Medication records, including names, dosages, frequencies, and dose log timestamps" />
+          <BulletPoint text="Meal logs, including descriptions, meal types, carbohydrate estimates, and timestamps" />
+          <BulletPoint text="App preferences, including unit preferences, threshold values, display settings, and reminder times" />
+          <Paragraph text="GlucoTrack does not collect:" />
+          <BulletPoint text="Your name, email address, or phone number through the app" />
           <BulletPoint text="Location data" />
-          <BulletPoint text="Device identifiers for tracking purposes" />
-          <BulletPoint text="Usage analytics or behavioral data" />
-          <BulletPoint text="Any data from other apps on your device" />
+          <BulletPoint text="Device identifiers for advertising or tracking" />
+          <BulletPoint text="Behavioral analytics data" />
+          <BulletPoint text="Data from other apps on your device" />
         </Section>
 
         <Section title="3. How Your Data Is Stored">
-          <Paragraph text="Your health data is stored securely using the following methods:" />
-          <BulletPoint text="On iOS: App preferences are stored in the Secure Enclave via iOS Keychain Services (expo-secure-store)" />
-          <BulletPoint text="On Android: App preferences are stored using Android Keystore backed encryption" />
-          <BulletPoint text="Health records (glucose, medications, meals) are stored in a secure database" />
-          <BulletPoint text="All network communication uses HTTPS/TLS encryption" />
-          <BulletPoint text="Optional biometric authentication (Face ID / Touch ID / fingerprint) adds an additional layer of protection" />
+          <Paragraph text="Your data may be stored:" />
+          <BulletPoint text="Locally on your device" />
+          <BulletPoint text="In your personal iCloud storage, where iCloud syncing or backup is enabled" />
+          <BulletPoint text="In exported files created by you when you use the app's export feature" />
+          <Paragraph text="App preferences and saved records may use security features provided by your device and operating system." />
+          <Paragraph text="If certain app features use network communication, that communication is protected using HTTPS/TLS encryption." />
         </Section>
 
-        <Section title="4. Data Sharing">
-          <Paragraph text="GlucoTrack does NOT share your data with anyone:" />
-          <BulletPoint text="No third-party analytics services" />
-          <BulletPoint text="No advertising networks" />
-          <BulletPoint text="No data brokers or resellers" />
-          <BulletPoint text="No social media platforms" />
-          <BulletPoint text="No other users or organizations" />
-          <Paragraph text="Your health data remains entirely under your control. We will never sell, rent, or otherwise distribute your personal health information." />
+        <Section title="4. How Your Data Is Used">
+          <Paragraph text="Your data is used only to provide the app's main features, including:" />
+          <BulletPoint text="Saving your readings, medications, meals, and settings" />
+          <BulletPoint text="Showing your history and trends" />
+          <BulletPoint text="Syncing or backing up data through iCloud, where enabled" />
+          <BulletPoint text="Allowing you to export your data when you choose to do so" />
+          <BulletPoint text="Protecting app access through supported device security features" />
         </Section>
 
-        <Section title="5. Third-Party Services">
-          <Paragraph text="GlucoTrack does not integrate with any third-party tracking, analytics, or advertising services. The app contains:" />
-          <BulletPoint text="No advertisements" />
-          <BulletPoint text="No third-party SDKs that collect user data" />
-          <BulletPoint text="No cross-app tracking" />
-          <BulletPoint text="No App Tracking Transparency requests (because we do not track you)" />
+        <Section title="5. Data Sharing">
+          <Paragraph text="GlucoTrack does not sell, rent, or trade your data." />
+          <Paragraph text="We do not share your health data with advertising networks, data brokers, social media platforms, or other users." />
+          <Paragraph text="Your data may be processed through Apple services where needed to support iCloud storage, syncing, backup, or device-level security features." />
         </Section>
 
-        <Section title="6. Data Export & Deletion">
-          <Paragraph text="You have full control over your data:" />
-          <BulletPoint text="Export: You can export all your data at any time from Settings > Export Data. This creates a JSON file containing all your readings, medications, meals, and settings." />
-          <BulletPoint text="Delete: You can permanently delete all your data at any time from Settings > Clear All Data. This action is irreversible." />
-          <BulletPoint text="Uninstall: Removing the app from your device will also remove all locally stored data." />
+        <Section title="6. Third-Party Services">
+          <Paragraph text="GlucoTrack is not designed to use third-party advertising or tracking services." />
+          <Paragraph text="The app does not use cross-app tracking for advertising purposes." />
+          <Paragraph text="The app may rely on Apple-provided services and device features, including iCloud, local device storage, and supported biometric security options." />
+          <Paragraph text="If other third-party services are added later to support app functions, this Privacy Policy will be updated." />
         </Section>
 
-        <Section title="7. Data Security">
-          <Paragraph text="We implement multiple layers of security to protect your data:" />
-          <BulletPoint text="Encrypted storage using platform-native secure storage (iOS Keychain / Android Keystore)" />
-          <BulletPoint text="Optional biometric app lock (Face ID, Touch ID, fingerprint)" />
-          <BulletPoint text="Privacy screen protection when app is in background/app switcher" />
-          <BulletPoint text="Auto-lock timeout with configurable duration" />
-          <BulletPoint text="HTTPS/TLS encrypted network communication" />
+        <Section title="7. Data Export and Deletion">
+          <Paragraph text="You can manage your data within the app. Where these features are available, you may:" />
+          <BulletPoint text="Export your data from the app" />
+          <BulletPoint text="Permanently delete your saved data from the app" />
+          <BulletPoint text="Remove locally stored app data by uninstalling the app from your device" />
+          <Paragraph text="Please note:" />
+          <BulletPoint text="Exported files are controlled by you after export" />
+          <BulletPoint text="If your data has been synced to iCloud, copies may remain in iCloud until removed under your Apple account settings or backup system" />
+          <BulletPoint text="Uninstalling the app may remove local app data from your device, but may not automatically remove data stored in iCloud or in exported files" />
         </Section>
 
-        <Section title="8. Children's Privacy">
-          <Paragraph text="GlucoTrack is not directed at children under the age of 13. We do not knowingly collect personal information from children. If you are a parent or guardian and believe your child has provided us with personal data, please contact us so we can take appropriate action." />
+        <Section title="8. Data Security">
+          <Paragraph text="We take reasonable steps to protect your data from unauthorized access, loss, misuse, or disclosure. Security measures may include:" />
+          <BulletPoint text="Device-based secure storage" />
+          <BulletPoint text="Optional biometric app lock" />
+          <BulletPoint text="Privacy protection when the app is moved to the background" />
+          <BulletPoint text="Automatic app lock after a period of inactivity" />
+          <BulletPoint text="Encrypted network communication where used" />
+          <Paragraph text="No method of electronic storage or transmission is completely secure, but we work to protect the data handled by the app." />
         </Section>
 
-        <Section title="9. Changes to This Policy">
-          <Paragraph text="We may update this Privacy Policy from time to time. Any changes will be reflected in the 'Last Updated' date at the top of this page. We encourage you to review this policy periodically." />
+        <Section title="9. Children's Privacy">
+          <Paragraph text="GlucoTrack is not intended for children under the age of 13. We do not knowingly collect personal information from children under 13. If you believe a child has provided data through the app, please contact us." />
         </Section>
 
-        <Section title="10. Your Rights">
-          <Paragraph text="Depending on your jurisdiction, you may have the following rights:" />
-          <BulletPoint text="Right to access your data (use Export Data)" />
-          <BulletPoint text="Right to delete your data (use Clear All Data)" />
-          <BulletPoint text="Right to data portability (JSON export)" />
-          <BulletPoint text="Right to withdraw consent (disable features in Settings)" />
+        <Section title="10. Changes to This Policy">
+          <Paragraph text={'We may update this Privacy Policy from time to time. Any changes will be posted on this page, and the "Last Updated" date will be revised.'} />
         </Section>
 
-        <Section title="11. Contact Us">
+        <Section title="11. Your Rights">
+          <Paragraph text="Depending on your location and the laws that apply to you, you may have rights relating to your data, which may include:" />
+          <BulletPoint text="The right to access your data" />
+          <BulletPoint text="The right to delete your data" />
+          <BulletPoint text="The right to export your data" />
+          <BulletPoint text="The right to contact us with privacy questions" />
+        </Section>
+
+        <Section title="12. Contact Us">
           <Paragraph text="If you have questions, concerns, or requests regarding this Privacy Policy or your data, please contact us at:" />
-          <Paragraph text="Email: privacy@glucotrack.app" />
+          <Paragraph text="Email: hellorapidpaceai@gmail.com" />
         </Section>
 
         <View style={styles.footerBadge}>
