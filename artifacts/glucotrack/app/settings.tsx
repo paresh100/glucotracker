@@ -12,7 +12,6 @@ import {
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import * as LocalAuthentication from "expo-local-authentication";
-import * as Crypto from "expo-crypto";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -21,28 +20,9 @@ import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { Colors } from "@/constants/colors";
 import { useSettings, Unit, AutoLockTimeout } from "@/contexts/SettingsContext";
+import { PasswordModal } from "@/components/PasswordModal";
+import { encryptData } from "@/utils/encryption";
 import { api } from "@/hooks/useApi";
-
-function xorEncrypt(data: string, key: string): string {
-  const keyBytes = [];
-  for (let i = 0; i < key.length; i++) {
-    keyBytes.push(key.charCodeAt(i));
-  }
-  const result = [];
-  for (let i = 0; i < data.length; i++) {
-    result.push(data.charCodeAt(i) ^ keyBytes[i % keyBytes.length]);
-  }
-  return btoa(String.fromCharCode(...result));
-}
-
-async function deriveKey(password: string, salt: string): Promise<string> {
-  const material = password + salt;
-  const hash = await Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    material
-  );
-  return hash;
-}
 
 function SettingRow({
   label,
@@ -80,6 +60,7 @@ export default function SettingsModal() {
   const insets = useSafeAreaInsets();
   const { settings, updateSetting } = useSettings();
   const [exporting, setExporting] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [biometricType, setBiometricType] = useState("Biometrics");
 
   useEffect(() => {
@@ -136,27 +117,11 @@ export default function SettingsModal() {
   };
 
   const handleExport = () => {
-    Alert.prompt(
-      "Encrypt Export",
-      "Enter a password to encrypt your health data backup. You will need this password to restore.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Export",
-          onPress: async (password?: string) => {
-            if (!password || password.length < 4) {
-              Alert.alert("Password Required", "Please enter a password of at least 4 characters to encrypt your export.");
-              return;
-            }
-            await performExport(password);
-          },
-        },
-      ],
-      "secure-text",
-    );
+    setShowPasswordModal(true);
   };
 
   const performExport = async (password: string) => {
+    setShowPasswordModal(false);
     setExporting(true);
     try {
       const [glucose, meds, meals, medLogs] = await Promise.all([
@@ -181,22 +146,10 @@ export default function SettingsModal() {
       };
 
       const json = JSON.stringify(data);
-      const salt = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        Date.now().toString() + Math.random().toString()
-      );
-      const key = await deriveKey(password, salt);
-      const encrypted = xorEncrypt(json, key);
-
-      const exportPayload = JSON.stringify({
-        version: 1,
-        format: "glucotrack-encrypted",
-        salt,
-        data: encrypted,
-      });
+      const encrypted = await encryptData(json, password);
 
       const path = `${FileSystem.documentDirectory}glucotrack-backup-${Date.now()}.gtbak`;
-      await FileSystem.writeAsStringAsync(path, exportPayload, { encoding: FileSystem.EncodingType.UTF8 });
+      await FileSystem.writeAsStringAsync(path, encrypted, { encoding: FileSystem.EncodingType.UTF8 });
 
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
@@ -528,6 +481,14 @@ export default function SettingsModal() {
 
         <Text style={styles.version}>GlucoTrack v1.0.0</Text>
       </ScrollView>
+
+      <PasswordModal
+        visible={showPasswordModal}
+        title="Encrypt Export"
+        message="Enter a password to encrypt your health data backup. You will need this password to restore."
+        onSubmit={performExport}
+        onCancel={() => setShowPasswordModal(false)}
+      />
     </View>
   );
 }
