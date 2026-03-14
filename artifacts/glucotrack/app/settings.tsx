@@ -12,7 +12,6 @@ import {
   Linking,
 } from "react-native";
 import Slider from "@react-native-community/slider";
-import * as LocalAuthentication from "expo-local-authentication";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -20,7 +19,7 @@ import * as Haptics from "expo-haptics";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { Colors } from "@/constants/colors";
-import { useSettings, Unit, AutoLockTimeout } from "@/contexts/SettingsContext";
+import { useSettings, Unit } from "@/contexts/SettingsContext";
 import { PasswordModal } from "@/components/PasswordModal";
 import { encryptData } from "@/utils/encryption";
 import { api } from "@/hooks/useApi";
@@ -49,42 +48,11 @@ function SectionHeader({ title }: { title: string }) {
   return <Text style={styles.sectionHeader}>{title}</Text>;
 }
 
-const AUTO_LOCK_OPTIONS: { value: AutoLockTimeout; label: string }[] = [
-  { value: "immediate", label: "Immediately" },
-  { value: "1min", label: "After 1 minute" },
-  { value: "5min", label: "After 5 minutes" },
-  { value: "15min", label: "After 15 minutes" },
-];
-
 export default function SettingsModal() {
   const insets = useSafeAreaInsets();
   const { settings, updateSetting } = useSettings();
   const [exporting, setExporting] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [biometricType, setBiometricType] = useState("Biometrics");
-
-  useEffect(() => {
-    checkBiometricType();
-  }, []);
-
-  const checkBiometricType = async () => {
-    if (Platform.OS === "web") {
-      setBiometricType("Passcode");
-      return;
-    }
-    try {
-      const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
-      if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
-        setBiometricType("Face ID");
-      } else if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-        setBiometricType("Touch ID");
-      } else {
-        setBiometricType("Passcode");
-      }
-    } catch {
-      setBiometricType("Passcode");
-    }
-  };
 
   const hypoMmol = Math.round((settings.hypoThresholdMgdl / 18.0182) * 10) / 10;
   const hyperMmol = Math.round((settings.hyperThresholdMgdl / 18.0182) * 10) / 10;
@@ -92,28 +60,6 @@ export default function SettingsModal() {
   const handleBoolToggle = (key: 'showBolus' | 'showBasal' | 'showMedications' | 'fingerTracker' | 'backupEnabled' | 'reminderEnabled' | 'darkMode') => (value: boolean) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     updateSetting(key, value);
-  };
-
-  const handleAppLockToggle = async (value: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (value && Platform.OS !== "web") {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-      if (!hasHardware || !isEnrolled) {
-        Alert.alert(
-          "Biometrics Unavailable",
-          "Please set up Face ID, Touch ID, or a device passcode in your device settings first.",
-        );
-        return;
-      }
-      const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: "Verify to enable App Lock",
-        fallbackLabel: "Use Passcode",
-        disableDeviceFallback: false,
-      });
-      if (!result.success) return;
-    }
-    updateSetting("appLockEnabled", value);
   };
 
   const handleExport = () => {
@@ -216,43 +162,9 @@ export default function SettingsModal() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
 
-        {/* SECURITY */}
-        <SectionHeader title="Security & Privacy" />
+        {/* ABOUT & SUPPORT */}
+        <SectionHeader title="About & Support" />
         <View style={styles.card}>
-          <SettingRow
-            label={`App Lock (${biometricType})`}
-            desc="Require authentication to open the app"
-            right={<Switch value={settings.appLockEnabled} onValueChange={handleAppLockToggle} trackColor={{ true: Colors.primary }} />}
-          />
-          {settings.appLockEnabled && (
-            <>
-              <View style={styles.divider} />
-              <View style={styles.autoLockSection}>
-                <Text style={styles.subLabel}>Auto-Lock After</Text>
-                {AUTO_LOCK_OPTIONS.map((opt) => (
-                  <TouchableOpacity
-                    key={opt.value}
-                    style={styles.autoLockRow}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      updateSetting("autoLockTimeout", opt.value);
-                    }}
-                  >
-                    <Text style={[
-                      styles.autoLockText,
-                      settings.autoLockTimeout === opt.value && styles.autoLockTextActive
-                    ]}>
-                      {opt.label}
-                    </Text>
-                    {settings.autoLockTimeout === opt.value && (
-                      <Ionicons name="checkmark" size={18} color={Colors.primary} />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </>
-          )}
-          <View style={styles.divider} />
           <TouchableOpacity
             style={styles.actionRow}
             onPress={() => Linking.openURL("https://rapidpaceai.cc/glucotrack-privacy")}
