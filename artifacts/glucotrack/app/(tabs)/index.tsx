@@ -48,6 +48,67 @@ function timeSince(isoStr: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+function computeStreak(readings: GlucoseReading[]): number {
+  if (readings.length === 0) return 0;
+  const daySet = new Set(
+    readings.map(r => new Date(r.recordedAt).toISOString().split("T")[0])
+  );
+  let streak = 0;
+  const today = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split("T")[0];
+    if (daySet.has(key)) streak++;
+    else break;
+  }
+  return streak;
+}
+
+function computeInsights(readings: GlucoseReading[], hypo: number, hyper: number): string[] {
+  if (readings.length < 7) return [];
+  const withMeta = readings.map(r => ({
+    mgdl: r.unit === "mmol" ? r.value * 18.0182 : r.value,
+    hour: new Date(r.recordedAt).getHours(),
+    context: r.context,
+  }));
+  const periods = [
+    { name: "mornings (6–10am)", hours: [6, 7, 8, 9] },
+    { name: "midday (10am–2pm)", hours: [10, 11, 12, 13] },
+    { name: "afternoons (2–6pm)", hours: [14, 15, 16, 17] },
+    { name: "evenings (6–10pm)", hours: [18, 19, 20, 21] },
+    { name: "nights (10pm–6am)", hours: [22, 23, 0, 1, 2, 3, 4, 5] },
+  ];
+  const periodAvgs = periods.map(p => {
+    const pr = withMeta.filter(r => p.hours.includes(r.hour));
+    if (pr.length < 2) return null;
+    return { name: p.name, avg: pr.reduce((s, r) => s + r.mgdl, 0) / pr.length };
+  }).filter(Boolean) as { name: string; avg: number }[];
+  if (periodAvgs.length < 2) return [];
+  const sorted = [...periodAvgs].sort((a, b) => b.avg - a.avg);
+  const highest = sorted[0];
+  const lowest = sorted[sorted.length - 1];
+  const insights: string[] = [];
+  if (highest.avg > hyper) {
+    insights.push(`Your glucose runs highest in the ${highest.name}, averaging ${Math.round(highest.avg)} mg/dL — above your target.`);
+  } else {
+    insights.push(`Your glucose tends to peak in the ${highest.name}, averaging ${Math.round(highest.avg)} mg/dL.`);
+  }
+  if (lowest.avg < hypo) {
+    insights.push(`Watch your ${lowest.name} — readings dip to an average of ${Math.round(lowest.avg)} mg/dL, below your target.`);
+  } else {
+    insights.push(`Your best readings are in the ${lowest.name}, averaging ${Math.round(lowest.avg)} mg/dL.`);
+  }
+  const fasting = withMeta.filter(r => r.context === "fasting");
+  if (fasting.length >= 3) {
+    const fastAvg = fasting.reduce((s, r) => s + r.mgdl, 0) / fasting.length;
+    if (fastAvg > hyper * 0.9) {
+      insights.push(`Fasting readings average ${Math.round(fastAvg)} mg/dL — may indicate dawn phenomenon worth discussing with your doctor.`);
+    }
+  }
+  return insights;
+}
+
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const qc = useQueryClient();
@@ -74,6 +135,17 @@ export default function DashboardScreen() {
     queryKey: ["med-logs", "day"],
     queryFn: () => api.getMedLogs("day"),
   });
+  const { data: allReadings = [] } = useQuery({
+    queryKey: ["glucose", "all"],
+    queryFn: () => api.getGlucose(),
+  });
+  const { data: monthReadings = [] } = useQuery({
+    queryKey: ["glucose", "month"],
+    queryFn: () => api.getGlucose("month"),
+  });
+
+  const streak = computeStreak(allReadings);
+  const insights = computeInsights(monthReadings, settings.hypoThresholdMgdl, settings.hyperThresholdMgdl);
 
   const latest = readings[0];
   const latestMgdl = latest ? toMgdl(latest.value, latest.unit) : 0;
@@ -118,12 +190,21 @@ export default function DashboardScreen() {
             <Text style={styles.appName}>GlucoTrack</Text>
             <Text style={styles.dateText}>{new Date().toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.settingsBtn}
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/settings"); }}
-          >
-            <Ionicons name="settings-outline" size={20} color={Colors.textSecondary} />
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            {streak >= 1 && (
+              <View style={styles.streakBadge}>
+                <Text style={styles.streakFire}>🔥</Text>
+                <Text style={styles.streakCount}>{streak}</Text>
+                <Text style={styles.streakLabel}>{streak === 1 ? "day" : "days"}</Text>
+              </View>
+            )}
+            <TouchableOpacity
+              style={styles.settingsBtn}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/settings"); }}
+            >
+              <Ionicons name="settings-outline" size={20} color={Colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Gauge Card */}
@@ -226,6 +307,23 @@ export default function DashboardScreen() {
             icon="pulse"
           />
         </View>
+
+        {/* Insights Card */}
+        {insights.length > 0 && (
+          <View style={styles.insightsCard}>
+            <View style={styles.insightsHeader}>
+              <Ionicons name="bulb-outline" size={14} color={Colors.warning} />
+              <Text style={styles.insightsTitle}>Insights</Text>
+              <Text style={styles.insightsSub}>based on 30-day data</Text>
+            </View>
+            {insights.map((insight, i) => (
+              <View key={i} style={styles.insightRow}>
+                <View style={styles.insightDot} />
+                <Text style={styles.insightText}>{insight}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Today's Readings Timeline */}
         {todayReadings.length > 0 && (
@@ -384,6 +482,34 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     marginTop: 2,
   },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  streakBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: "rgba(255,160,0,0.12)",
+    borderRadius: 12,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: "rgba(255,160,0,0.25)",
+  },
+  streakFire: { fontSize: 13 },
+  streakCount: {
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+    color: Colors.warning,
+  },
+  streakLabel: {
+    fontSize: 10,
+    fontFamily: "Inter_400Regular",
+    color: Colors.warning,
+    opacity: 0.8,
+  },
   settingsBtn: {
     width: 40,
     height: 40,
@@ -391,6 +517,52 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.06)",
     justifyContent: "center",
     alignItems: "center",
+  },
+  insightsCard: {
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.warning + "30",
+  },
+  insightsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
+  },
+  insightsTitle: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    color: Colors.warning,
+    flex: 1,
+  },
+  insightsSub: {
+    fontSize: 10,
+    fontFamily: "Inter_400Regular",
+    color: Colors.textMuted,
+  },
+  insightRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginBottom: 8,
+  },
+  insightDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: Colors.warning,
+    marginTop: 6,
+    flexShrink: 0,
+  },
+  insightText: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: Colors.textSecondary,
+    lineHeight: 18,
   },
   gaugeCard: {
     alignItems: "center",
